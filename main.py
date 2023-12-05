@@ -3,7 +3,8 @@ import logging
 import os
 from logging.config import fileConfig
 from service.network_service import NetworkService
-from common.deployzer_exception import DeployzerException
+from service.executor_service import ExecutorService
+
 
 if __name__ == '__main__':
     # 初始化 logger
@@ -24,9 +25,14 @@ if __name__ == '__main__':
         dest='name', type=str, help='Optional server name.', required=False)
     args = parser.parse_args()
 
-    # 启动
-    try:
-        http_client = NetworkService(args.url, args.token, args.name)
-    except DeployzerException:
-        logger.exception('启动失败')
-        exit(1)
+    # 初始化 http client
+    http_client = NetworkService(args.url, args.token, args.name)
+    # 注册 client
+    http_client.register()
+
+    # 开始轮询
+    command_dto = http_client.get_command()
+    if command_dto.command is None:
+        pass
+    stdout, stderr, duration = ExecutorService.run_command(command_dto.command)
+    http_client.report_command_result(stdout, stderr, duration)
