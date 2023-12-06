@@ -2,5 +2,5 @@ from dataclasses import dataclass
 
 
 @dataclass
-class GetCommandDto:
+class GetCommandResponseDto:
     command:str

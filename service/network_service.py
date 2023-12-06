@@ -1,6 +1,6 @@
 import requests
 
-from dto.get_command_dto import GetCommandDto
+from dto.get_command_response_dto import GetCommandResponseDto
 from dto.registration_dto import RegistrationDto
 from dto.report_command_result_dto import ReportCommandResultDto
 import dataclasses
@@ -30,23 +30,23 @@ class NetworkService:
         # 发送注册请求
         registration_dto = RegistrationDto(self.ip, self.uuid, self.name)
         try:
-            self.post_authorized_json(self.url + '/register', dataclasses.asdict(registration_dto))
+            self.post_authorized_json(self.url + '/deployzer/registration', dataclasses.asdict(registration_dto))
         except DeployzerException as e:
             raise DeployzerException('注册失败') from e
 
     '''
     获取命令， 会抛出 DeployzerException 异常
     '''
-    def get_command(self) -> GetCommandDto:
+    def get_command(self) -> GetCommandResponseDto:
         # 创建查询
         query_dto = RegistrationDto(self.get_public_ip(), self.uuid, self.name)
         # 查询
         try:
-            response_json = self.post_authorized_json(self.url + '/get-command', dataclasses.asdict(query_dto))
+            response_json = self.post_authorized_json(self.url + '/deployzer/get-command', dataclasses.asdict(query_dto))
         except DeployzerException as e:
             raise DeployzerException('获取命令失败') from e
         # 赋值
-        return GetCommandDto(response_json['command'])
+        return GetCommandResponseDto(response_json['data']['command'])
 
     '''
     上报命令执行的结果， 会抛出 DeployzerException 异常
@@ -57,7 +57,7 @@ class NetworkService:
         # 上报结果
         try:
             self.post_authorized_json(
-                self.url + '/report-command-result',
+                self.url + '/deployzer/report-command-result',
                 dataclasses.asdict(report_command_result_dto)
             )
         except DeployzerException as e:
@@ -101,7 +101,7 @@ class NetworkService:
         try:
             response_json = response.json()
         except Exception as e:
-            raise DeployzerException('响应反序列化失败: ' + str(response)) from e
+            raise DeployzerException('响应反序列化失败: ' + response.text) from e
         # 业务逻辑检查
         if response_json['code'] != 200:
             raise DeployzerException('响应 code 不为 200: ' + response_json)
