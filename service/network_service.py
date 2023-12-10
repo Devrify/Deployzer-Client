@@ -1,4 +1,8 @@
+import json
+
 import requests
+from pathlib import Path
+
 
 from dto.get_command_response_dto import GetCommandResponseDto
 from dto.registration_dto import RegistrationDto
@@ -11,14 +15,11 @@ from common.deployzer_exception import DeployzerException
 
 class NetworkService:
     def __init__(self, url:str, token:str, name:str=None):
-        try:
-            self.ip = self.get_public_ip()
-        except Exception as e:
-            raise DeployzerException('获取公网 IP 失败') from e
+        self.ip = self.get_public_ip()
         self.url = url
         self.token = token
         self.name = name
-        self.uuid = str(uuid.uuid4())
+        self.uuid = self.get_uuid()
 
 
         self._logger = logging.getLogger(__name__)
@@ -86,7 +87,10 @@ class NetworkService:
     '''
     @staticmethod
     def get_public_ip() -> str:
-        return requests.get('https://ident.me', timeout=5).text.strip()
+        try:
+            return requests.get('https://ident.me', timeout=5).text.strip()
+        except Exception as e:
+            raise DeployzerException('获取公网 IP 失败') from e
 
 
     '''
@@ -106,3 +110,28 @@ class NetworkService:
         if response_json['code'] != 200:
             raise DeployzerException('响应 code 不为 200: ' + response_json)
         return response_json
+
+
+    '''
+    从本地获取 uuid ， 没有则新建
+    '''
+    @staticmethod
+    def get_uuid() -> str:
+        path = './uuid.json'
+        if Path(path).exists():
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    return json.load(f)['uuid']
+            except Exception as e:
+                raise DeployzerException('无法从文件反序列化 uuid') from e
+        else:
+            uuid_str = str(uuid.uuid4())
+            data = {
+                'uuid':uuid_str
+            }
+            try:
+                with open(path, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
+                return uuid_str
+            except Exception as e:
+                raise DeployzerException('无法保存 uuid 到文件中') from e
