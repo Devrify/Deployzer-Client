@@ -36,14 +36,16 @@ if __name__ == '__main__':
     # 开始轮询
     logger.info('开始循环获取命令')
     while True:
+        # 获取命令
         command_dto = http_client.get_command()
         if command_dto.command is None:
             logger.info("命令为空")
             time.sleep(10)
             continue
+        # 执行命令
         logger.info('命令是 ' + command_dto.command)
         stdout, stderr, duration = ExecutorService.run_command(command_dto.command)
         logger.info('命令执行完毕')
-
-        http_client.report_command_result(stdout, stderr, duration)
+        # 上报结果
+        http_client.report_command_result(stdout, stderr, duration, command_dto.deploy_execution_id)
         time.sleep(10)

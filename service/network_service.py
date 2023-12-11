@@ -46,15 +46,20 @@ class NetworkService:
             response_json = self.post_authorized_json(self.url + '/deployzer/get-command', dataclasses.asdict(query_dto))
         except DeployzerException as e:
             raise DeployzerException('获取命令失败') from e
+        # 检查
+        data = response_json['data']
+        if 'command' not in data or 'deploy_execution_id' not in data:
+            raise DeployzerException('命令或执行 id 为空')
         # 赋值
-        return GetCommandResponseDto(response_json['data']['command'])
+        return GetCommandResponseDto(data['command'], data['deploy_execution_id'])
 
     '''
     上报命令执行的结果， 会抛出 DeployzerException 异常
     '''
-    def report_command_result(self, stdout:str, stderr, duration:float):
-        # 创建查询
-        report_command_result_dto = ReportCommandResultDto(self.ip, self.uuid, self.name, stdout, stderr, duration)
+    def report_command_result(self, stdout:str, stderr, duration:float, deploy_execution_id:int):
+        # 创建 dto
+        report_command_result_dto \
+            = ReportCommandResultDto(stdout, stderr, duration, deploy_execution_id)
         # 上报结果
         try:
             self.post_authorized_json(
@@ -107,8 +112,12 @@ class NetworkService:
         except Exception as e:
             raise DeployzerException('响应反序列化失败: ' + response.text) from e
         # 业务逻辑检查
+        if 'code' not in response_json:
+            raise DeployzerException('没有响应 code' + str(response_json))
+        if 'data' not in response_json:
+            raise DeployzerException('没有 data' + str(response_json))
         if response_json['code'] != 200:
-            raise DeployzerException('响应 code 不为 200: ' + response_json)
+            raise DeployzerException('响应 code 不为 200: ' + str(response_json))
         return response_json
 
 

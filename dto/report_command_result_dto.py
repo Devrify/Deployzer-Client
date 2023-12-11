@@ -4,7 +4,8 @@ from dto.registration_dto import RegistrationDto
 
 
 @dataclass
-class ReportCommandResultDto(RegistrationDto):
+class ReportCommandResultDto:
     stdout:str
     stderr:str
     duration:float
+    deploy_execution_id:int
