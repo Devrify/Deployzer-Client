@@ -16,7 +16,7 @@ from common.deployzer_exception import DeployzerException
 class NetworkService:
     def __init__(self, url:str, token:str, name:str=None):
         self.ip = self.get_public_ip()
-        self.url = url
+        self.url = url + '/deployzer/client'
         self.token = token
         self.name = name
         self.uuid = self.get_uuid()
@@ -31,7 +31,7 @@ class NetworkService:
         # 发送注册请求
         registration_dto = RegistrationDto(self.ip, self.uuid, self.name)
         try:
-            self.post_authorized_json(self.url + '/deployzer/registration', dataclasses.asdict(registration_dto))
+            self.post_authorized_json(self.url + '/registration', dataclasses.asdict(registration_dto))
         except DeployzerException as e:
             raise DeployzerException('注册失败') from e
 
@@ -43,7 +43,7 @@ class NetworkService:
         query_dto = RegistrationDto(self.get_public_ip(), self.uuid, self.name)
         # 查询
         try:
-            response_json = self.post_authorized_json(self.url + '/deployzer/get-command', dataclasses.asdict(query_dto))
+            response_json = self.post_authorized_json(self.url + '/get-command', dataclasses.asdict(query_dto))
         except DeployzerException as e:
             raise DeployzerException('获取命令失败') from e
         # 检查
@@ -63,7 +63,7 @@ class NetworkService:
         # 上报结果
         try:
             self.post_authorized_json(
-                self.url + '/deployzer/report-command-result',
+                self.url + '/report-command-result',
                 dataclasses.asdict(report_command_result_dto)
             )
         except DeployzerException as e:
