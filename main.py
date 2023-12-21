@@ -2,10 +2,28 @@ import argparse
 import logging
 import os
 import time
+from common.deployzer_exception import DeployzerException
+from typing import Callable
 from logging.config import fileConfig
 from service.network_service import NetworkService
 from service.executor_service import ExecutorService
 
+
+def retry(function: Callable, count:int, early_success:bool=True):
+    real_count = count
+    while real_count > 0:
+        try:
+            function()
+            if early_success:
+                return
+            real_count = count
+            time.sleep(5)
+        except DeployzerException as e:
+            real_count -= 1
+            if real_count == 0:
+                raise e
+            logger.error(e, stack_info=True)
+            time.sleep(5)
 
 if __name__ == '__main__':
     # 初始化 logger
@@ -29,23 +47,27 @@ if __name__ == '__main__':
     # 初始化 http client
     logger.info('初始化 http client')
     http_client = NetworkService(args.url, args.token, args.name)
-    # 注册 client
-    logger.info('注册 client')
-    http_client.register()
 
-    # 开始轮询
-    logger.info('开始循环获取命令')
-    while True:
+
+    # 注册 client
+    def registration():
+        logger.info('注册 client')
+        http_client.register()
+    retry(registration,3)
+
+    def get_command():
         # 获取命令
         command_dto = http_client.get_command()
         if command_dto.command is None:
             logger.info("命令为空")
-            time.sleep(10)
-            continue
+            return
         # 执行命令
         logger.info('命令是 ' + command_dto.command)
         stdout, stderr, duration = ExecutorService.run_command(command_dto.command)
         logger.info('命令执行完毕')
         # 上报结果
         http_client.report_command_result(stdout, stderr, duration, command_dto.deploy_execution_id)
-        time.sleep(10)
+
+    # 开始轮询
+    logger.info('开始循环获取命令')
+    retry(get_command, 3, early_success=False)
