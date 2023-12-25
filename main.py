@@ -42,7 +42,7 @@ if __name__ == '__main__':
         dest='token', type=str, help='Optional server token.', required=True)
     parser.add_argument(
        '-n' ,'--name',
-        dest='name', type=str, help='Optional client name.', required=False)
+        dest='name', type=str, help='Optional client name.', required=True)
     args = parser.parse_args()
 
     # 初始化 http client
