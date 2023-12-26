@@ -1,4 +1,4 @@
 python3 -m venv .venv;
 . .venv/bin/activate;
 pip3 install -r requirements.txt;
-python3 main.py -u url -t token -n name;
+python3 main.py -u http://43.139.195.214:10810 -t dt1112728325 -n prod-test;
