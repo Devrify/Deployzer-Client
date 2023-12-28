@@ -93,7 +93,7 @@ class NetworkService:
     @staticmethod
     def get_public_ip() -> str:
         try:
-            return requests.get('https://ident.me', timeout=5).text.strip()
+            return requests.get('https://checkip.amazonaws.com', timeout=5).text.strip()
         except Exception as e:
             raise DeployzerException('获取公网 IP 失败') from e
 
